@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>ASP.NET Core SignalR Chat</title>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.7/signalr.min.js"></script>
+
+</head>
+<body>
+  <div class="container">
+        <input type="text" id="message" />
+        <input type="button" id="sendButton" value="Send" />
+        <input type="hidden" id="displayname" />
+        <ul id="discussion"></ul>
+    </div>
+	<ul id="messageList"></ul>
+  <script>
+//server範例 https://docs.microsoft.com/zh-tw/aspnet/core/tutorials/signalr?view=aspnetcore-5.0&tabs=visual-studio
+//client範例 https://docs.microsoft.com/zh-tw/aspnet/core/signalr/javascript-client?view=aspnetcore-5.0
+		const connection = new signalR.HubConnectionBuilder()
+			.withUrl("/chathub")
+			.configureLogging(signalR.LogLevel.Information)
+			.build();
+
+		async function start() {
+			try {
+				await connection.start();
+				console.log("SignalR OK.");
+			} catch (err) {
+				console.log(err);
+				setTimeout(start, 5000);
+			}
+		};
+
+		connection.onclose(start);
+
+		// Start the connection.
+		start();
+	
+		connection.on("ReceiveMessage", (user, message) => {
+		
+			//alert(message);
+			const li = document.createElement("li");
+			li.textContent = user +":"+ message;
+			document.getElementById("messageList").appendChild(li);
+		});		
+
+		connection.onclose(error => {
+			console.assert(connection.state === signalR.HubConnectionState.Disconnected);
+
+			document.getElementById("messageInput").disabled = true;
+
+			const li = document.createElement("li");
+			li.textContent = `Connection closed due to error "${error}". Try refreshing this page to restart the connection.`;
+			document.getElementById("messagesList").appendChild(li);
+		});
+
+		
+
+  document.getElementById("sendButton").addEventListener("click", function (event) {
+            var user = "1111";
+            var message = document.getElementById("message").value;
+            connection.invoke("SendMessage", user, message).catch(function (err) {
+                return console.error(err.toString());
+            });
+            event.preventDefault();
+        });		
+    </script>
+</body>
+</html>
